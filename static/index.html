@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AegisGraph - Cloud IAM & Network Attack Path Analyzer</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Cytoscape.js & Dagre Layout Plugin -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dagre/0.8.5/dagre.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.min.js"></script>
+    
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="brand">
+                <div class="logo-container">
+                    <i data-lucide="shield-alert" class="logo-icon"></i>
+                </div>
+                <div class="brand-text">
+                    <h1>AEGISGRAPH</h1>
+                    <p>Cloud Security IAM & privilege Escalation Path Analyzer</p>
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <div id="db-status-badge" class="status-badge disconnected">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Checking Database...</span>
+                </div>
+                <button id="reconnect-btn" class="icon-btn" title="Refresh Connection">
+                    <i data-lucide="refresh-cw"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- KPI Dashboard Panel -->
+        <section class="kpi-dashboard">
+            <div class="kpi-card" id="kpi-assets">
+                <div class="kpi-icon-wrapper blue">
+                    <i data-lucide="server"></i>
+                </div>
+                <div class="kpi-info">
+                    <span class="kpi-label">Monitored Assets</span>
+                    <span class="kpi-value" id="val-assets">-</span>
+                </div>
+            </div>
+            <div class="kpi-card" id="kpi-vulns">
+                <div class="kpi-icon-wrapper red">
+                    <i data-lucide="bug"></i>
+                </div>
+                <div class="kpi-info">
+                    <span class="kpi-label">Vulnerabilities (Critical)</span>
+                    <span class="kpi-value" id="val-vulns">-</span>
+                </div>
+            </div>
+            <div class="kpi-card" id="kpi-paths">
+                <div class="kpi-icon-wrapper amber">
+                    <i data-lucide="git-merge"></i>
+                </div>
+                <div class="kpi-info">
+                    <span class="kpi-label">High-Risk Attack Paths</span>
+                    <span class="kpi-value" id="val-paths">-</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Content Area -->
+        <main class="app-content">
+            <!-- Sidebar Controls -->
+            <aside class="sidebar-panel">
+                <nav class="tab-nav">
+                    <button class="tab-btn active" data-tab="path-finder">
+                        <i data-lucide="route"></i> Path Finder
+                    </button>
+                    <button class="tab-btn" data-tab="blast-radius">
+                        <i data-lucide="radio"></i> Blast Radius
+                    </button>
+                    <button class="tab-btn" data-tab="auditor">
+                        <i data-lucide="clipboard-list"></i> Attack Vector Audit
+                    </button>
+                    <button class="tab-btn" data-tab="database">
+                        <i data-lucide="database"></i> Admin
+                    </button>
+                </nav>
+
+                <div class="tab-content-container">
+                    <!-- Tab: Path Finder -->
+                    <div class="tab-content active" id="tab-path-finder">
+                        <h3>Analyze Attack Vector</h3>
+                        <p class="tab-description">Find the shortest exploit path between a start asset (e.g., public EC2, user credentials) and target asset (e.g., customer DB, S3 bucket).</p>
+                        
+                        <div class="form-group">
+                            <label for="select-source">Source Node</label>
+                            <div class="select-wrapper">
+                                <i data-lucide="search" class="select-icon"></i>
+                                <select id="select-source" class="form-select">
+                                    <option value="" disabled selected>Select starting asset...</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="select-target">Target Node</label>
+                            <div class="select-wrapper">
+                                <i data-lucide="target" class="select-icon"></i>
+                                <select id="select-target" class="form-select">
+                                    <option value="" disabled selected>Select target asset...</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button id="btn-find-path" class="primary-btn glow-btn">
+                            <i data-lucide="sparkles"></i> Trace Attack Path
+                        </button>
+                    </div>
+
+                    <!-- Tab: Blast Radius -->
+                    <div class="tab-content" id="tab-blast-radius">
+                        <h3>Blast Radius Assessment</h3>
+                        <p class="tab-description">Assess how far an attacker can move laterally if this specific node is compromised (up to 4 hops).</p>
+                        
+                        <div class="form-group">
+                            <label for="select-blast-source">Compromised Node</label>
+                            <div class="select-wrapper">
+                                <i data-lucide="skull" class="select-icon"></i>
+                                <select id="select-blast-source" class="form-select">
+                                    <option value="" disabled selected>Select compromised asset...</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="range-hops">Lateral Movement Depth (Hops): <span id="val-hops">3</span></label>
+                            <input type="range" id="range-hops" min="1" max="4" value="3" class="form-slider">
+                        </div>
+
+                        <button id="btn-blast-radius" class="primary-btn glow-btn warn-btn">
+                            <i data-lucide="scan"></i> Calculate Blast Radius
+                        </button>
+                    </div>
+
+                    <!-- Tab: Auditor -->
+                    <div class="tab-content" id="tab-auditor">
+                        <h3>Critical Escalation Chains</h3>
+                        <p class="tab-description">Automated security query showing vulnerabilities that lead directly to AWS IAM roles with high datastore access.</p>
+                        
+                        <div id="vulnerability-list" class="findings-list">
+                            <div class="loading-state">
+                                <div class="spinner"></div>
+                                <p>Running security auditing query...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Database Admin -->
+                    <div class="tab-content" id="tab-database">
+                        <h3>Infrastructure Setup</h3>
+                        <p class="tab-description">Manage CognoDB data layers. Seed database with realistic IAM networks and vulnerabilities.</p>
+                        
+                        <div class="admin-actions">
+                            <button id="btn-seed-db" class="secondary-btn">
+                                <i data-lucide="refresh-cw"></i> Reload Mock Data Topology
+                            </button>
+                        </div>
+                        
+                        <div class="connection-info">
+                            <h4>Connection Parameter Info</h4>
+                            <div class="info-block">
+                                <span class="info-label">Active Connection</span>
+                                <code id="active-uri-val">bolt+s://...</code>
+                            </div>
+                            <p class="connection-tip">To update credentials, modify the <code>.env</code> file in the project directory and restart the application.</p>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Graph Workspace -->
+            <section class="graph-workspace">
+                <div class="workspace-header">
+                    <h2 id="workspace-title">Active Security Topology</h2>
+                    <div class="graph-controls">
+                        <button id="btn-zoom-in" class="icon-btn" title="Zoom In"><i data-lucide="zoom-in"></i></button>
+                        <button id="btn-zoom-out" class="icon-btn" title="Zoom Out"><i data-lucide="zoom-out"></i></button>
+                        <button id="btn-fit" class="icon-btn" title="Fit to Screen"><i data-lucide="minimize"></i></button>
+                        <button id="btn-reset-layout" class="icon-btn" title="Redraw Layout"><i data-lucide="layout"></i></button>
+                    </div>
+                </div>
+
+                <!-- Cytoscape Container -->
+                <div class="graph-container-wrapper">
+                    <div id="cy"></div>
+                    <div id="graph-overlay" class="graph-overlay hidden">
+                        <div class="overlay-content">
+                            <div class="spinner"></div>
+                            <span id="overlay-text">Executing query...</span>
+                        </div>
+                    </div>
+                    <div id="empty-state" class="empty-state">
+                        <i data-lucide="route" class="empty-icon"></i>
+                        <h3>No Graph Rendered</h3>
+                        <p>Select a source/target, audit chain, or blast radius source to visualize the active attack graph.</p>
+                    </div>
+                </div>
+
+                <!-- Selected Node Details Drawer -->
+                <div id="details-drawer" class="details-drawer hidden">
+                    <div class="drawer-header">
+                        <h3 id="details-title">Asset Properties</h3>
+                        <button id="close-drawer-btn" class="icon-btn"><i data-lucide="x"></i></button>
+                    </div>
+                    <div class="drawer-body">
+                        <div class="property-group">
+                            <span class="prop-badge" id="details-type">-</span>
+                            <span class="prop-badge" id="details-criticality">-</span>
+                        </div>
+                        <table id="details-table" class="properties-table">
+                            <tbody>
+                                <!-- Filled by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Offline/Error Config Modal -->
+    <div id="error-modal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <div class="modal-header">
+                <i data-lucide="alert-octagon" class="modal-error-icon"></i>
+                <h2>CognoDB Connectivity Error</h2>
+            </div>
+            <div class="modal-body">
+                <p>The application was unable to establish a secure Bolt connection to your CognoDB instance.</p>
+                
+                <div class="setup-steps">
+                    <h4>Resolution Steps:</h4>
+                    <ol>
+                        <li>Go to <a href="https://console.cognodb.com/" target="_blank">console.cognodb.com</a> and sign up for a free instance.</li>
+                        <li>Save your connection details (URI and Password).</li>
+                        <li>Create a file named <code>.env</code> in the project root:
+                            <pre><code>COGNODB_URI=bolt+s://&lt;your-id&gt;.databases.cognodb.cloud
+COGNODB_PASSWORD=&lt;your-password&gt;</code></pre>
+                        </li>
+                        <li>Restart this server by running <code>python3 app.py</code> in the terminal.</li>
+                    </ol>
+                </div>
+                
+                <div class="error-detail-box">
+                    <strong>Error Message Log:</strong>
+                    <p id="error-modal-message">No database credentials found in environment.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="modal-retry-btn" class="primary-btn"><i data-lucide="refresh-cw"></i> Retry Connection</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
