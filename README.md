@@ -4,6 +4,15 @@ AegisGraph is a cybersecurity tool for visualising and auditing cloud infrastruc
 
 ---
 
+## 🔗 Live Hosted Demo
+
+The application is deployed and available to interact with in the cloud:
+👉 **[AegisGraph Live Demo](https://aegisgraph-app.onrender.com/)**
+
+*(Note: The database is pre-seeded and fully connected to a live CognoDB Cloud instance. Reviewers can click finding cards in the **Attack Vector Audit** tab or select assets in the **Path Finder** to trace paths immediately!)*
+
+---
+
 ## 🧭 Why a Graph Database?
 
 A relational database (RDBMS) represents data in tables, requiring multiple foreign key joins to resolve relationships. In cloud environments, security paths consist of mixed entity types:
