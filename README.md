@@ -99,7 +99,7 @@ RETURN c, v, r, ds
 
 Here is a preview of the interactive AegisGraph dashboard visualization, showing the asset network layout and risk parameters:
 
-![AegisGraph Dashboard Preview](static/ui_screenshot.jpg)
+![AegisGraph Dashboard Preview](./static/ui_screenshot.jpg)
 
 ---
 
