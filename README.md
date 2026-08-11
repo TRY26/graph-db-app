@@ -141,4 +141,3 @@ Launch the Flask server:
 ```bash
 python3 app.py
 ```
-Open [http://localhost:5001](http://localhost:5001) in your browser to explore the interactive security workspace.
